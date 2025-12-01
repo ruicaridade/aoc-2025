@@ -1,4 +1,4 @@
-const MAX: i32 = 99;
+const MAX: i32 = 100;
 
 fn main() {
     let lines = common::read_lines_from_input();
@@ -17,26 +17,42 @@ fn main() {
             _ => panic!("Invalid direction: {}", direction),
         };
 
-        let mut p = position;
-        for _ in 0..steps {
-            p += multiplier;
+        let rotations = steps / MAX;
+        let remainder = steps % MAX;
 
-            if p > MAX {
-                p = 0;
-            } else if p < 0 {
-                p = MAX;
+        part_two += rotations;
+
+        let mut new_position = position + remainder * multiplier;
+
+        // Check if we pass through 0 during the remainder rotation (before wrapping)
+        if multiplier == 1 {
+            // Right: we pass 0 if position + i = MAX for some i in [1, remainder]
+            if position < MAX && position + remainder >= MAX {
+                part_two += 1;
             }
-
-            if p == 0 {
+        } else {
+            // Left: we pass 0 if position - i = 0 for some i in [1, remainder]
+            if position > 0 && position - remainder <= 0 {
                 part_two += 1;
             }
         }
 
-        if p == 0 {
+        if new_position >= MAX {
+            new_position = new_position - MAX;
+        } else if new_position < 0 {
+            new_position = MAX - new_position.abs();
+        };
+
+        if new_position == 0 {
             part_one += 1;
         }
 
-        position = p;
+        println!(
+            "{} + {}{} = {}",
+            position, direction, steps_str, new_position
+        );
+
+        position = new_position;
     }
 
     println!("Part 1: {}", part_one);
