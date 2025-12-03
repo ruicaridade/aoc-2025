@@ -22,7 +22,7 @@ fn main() {
             // Solve part two
             // This checks all possible patterns up to half the length of the digits.
             // A bit brute-forcey, but it's pretty fast.
-            for j in 1..=(digits.len() / 2) {
+            'j: for j in 1..=(digits.len() / 2) {
                 if digits.len() % j != 0 {
                     continue;
                 }
@@ -30,33 +30,24 @@ fn main() {
                 let curr_slice = &digits[..j];
                 let step = curr_slice.len();
 
-                let mut is_pattern = true;
                 let mut k = j;
                 while k < digits.len() {
                     let next_slice = &digits[k..k + step];
-
-                    if curr_slice != next_slice {
-                        is_pattern = false;
-                        break;
-                    }
-
-                    if k + step > digits.len() {
-                        is_pattern = false;
-                        break;
+                    if curr_slice != next_slice || k + step > digits.len() {
+                        continue 'j;
                     }
 
                     k += step;
                 }
 
-                if is_pattern {
-                    part_two += digits.parse::<i64>().unwrap();
-                    break;
-                }
+                part_two += digits.parse::<i64>().unwrap();
+
+                // We can break out because we found a pattern.
+                break;
             }
         }
     }
 
-    // 4174379265
     println!("Part 1: {}", part_one);
     println!("Part 2: {}", part_two);
 }
