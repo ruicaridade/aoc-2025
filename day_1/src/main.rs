@@ -1,6 +1,9 @@
+use std::time::Instant;
+
 const MAX: i32 = 100;
 
 fn main() {
+    let start = Instant::now();
     let lines = common::read_lines_from_input();
 
     let mut part_one: i32 = 0;
@@ -55,6 +58,8 @@ fn main() {
         position = new_position;
     }
 
+    let elapsed = start.elapsed();
     println!("Part 1: {}", part_one);
     println!("Part 2: {}", part_two);
+    println!("Time: {:.2?}", elapsed);
 }

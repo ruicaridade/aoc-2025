@@ -1,4 +1,7 @@
+use std::time::Instant;
+
 fn main() {
+    let start = Instant::now();
     let (_, input) = common::read_input();
 
     let mut part_one: i64 = 0;
@@ -28,19 +31,18 @@ fn main() {
                 }
 
                 let curr_slice = &digits[..j];
-                let step = curr_slice.len();
 
                 let mut k = j;
                 while k < digits.len() {
-                    let next_slice = &digits[k..k + step];
-                    if curr_slice != next_slice || k + step > digits.len() {
+                    let next_slice = &digits[k..k + j];
+                    if curr_slice != next_slice || k + j > digits.len() {
                         continue 'j;
                     }
 
-                    k += step;
+                    k += j;
                 }
 
-                part_two += digits.parse::<i64>().unwrap();
+                part_two += i;
 
                 // We can break out because we found a pattern.
                 break;
@@ -48,6 +50,8 @@ fn main() {
         }
     }
 
+    let elapsed = start.elapsed();
     println!("Part 1: {}", part_one);
     println!("Part 2: {}", part_two);
+    println!("Time: {:.2?}", elapsed);
 }
