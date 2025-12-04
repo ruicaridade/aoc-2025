@@ -1,46 +1,49 @@
 use std::time::Instant;
 
-const PART_1_LEN: usize = 2;
-const PART_2_LEN: usize = 12;
+fn get_largest_number_combination(
+    length: usize,
+    digits: &[char],
+    start: usize,
+    combination: String,
+) -> String {
+    if combination.len() == length {
+        return combination;
+    }
+
+    let numbers_required = length - combination.len();
+
+    let mut max = '0';
+    let mut index = start;
+
+    for i in start..=digits.len() - numbers_required {
+        let digit = digits[i];
+
+        if digit > max {
+            max = digit;
+            index = i;
+        }
+    }
+
+    get_largest_number_combination(length, digits, index + 1, combination + &max.to_string())
+}
 
 fn main() {
     let start = Instant::now();
     let lines = common::read_lines_from_input();
 
-    let mut part_one: i32 = 0;
-    let mut part_two: i32 = 0;
+    let mut part_one: u64 = 0;
+    let mut part_two: u64 = 0;
 
     for line in lines {
-        let mut slice: Vec<(i32, char)> = line.char_indices().map(|(i, c)| (i as i32, c)).collect();
-        slice.sort_by(|a, b| b.1.cmp(&a.1));
+        let digits = line.chars().collect::<Vec<char>>();
 
-        let mut new = slice.iter().take(PART_1_LEN);
+        // Part One
+        let part_one_combination = get_largest_number_combination(2, &digits, 0, String::new());
+        part_one += part_one_combination.parse::<u64>().unwrap();
 
-        println!("{} -> {:?}", line, new);
-
-        // for i in 0..digits.len() {
-        //     let a = digits[i];
-
-        //     let mut b = None;
-        //     for j in 0..digits.len() {
-        //         if digits[j].0 > a.0 {
-        //             b = Some(digits[j]);
-        //             break;
-        //         }
-        //     }
-
-        //     if b.is_some() {
-        //         let combined = if a.0 < b.unwrap().0 {
-        //             format!("{}{}", a.1, b.unwrap().1)
-        //         } else {
-        //             format!("{}{}", b.unwrap().1, a.1)
-        //         };
-
-        //         println!("{} -> {}", line, combined);
-        //         part_one += combined.parse::<i32>().unwrap();
-        //         break;
-        //     }
-        // }
+        // Part Two
+        let part_one_combination = get_largest_number_combination(12, &digits, 0, String::new());
+        part_two += part_one_combination.parse::<u64>().unwrap();
     }
 
     let elapsed = start.elapsed();
