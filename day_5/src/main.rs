@@ -24,12 +24,35 @@ fn compact_ranges(ranges: Vec<(i64, i64)>) -> Vec<(i64, i64)> {
     new_ranges
 }
 
+fn count_fresh_ingredients(lines: &[String], ranges: &[(i64, i64)]) -> i64 {
+    let mut fresh_count = 0;
+
+    for i in 0..lines.len() {
+        let line = &lines[i];
+        let n = line.parse::<i64>().unwrap();
+
+        for j in 0..ranges.len() {
+            let (start, end) = ranges[j];
+
+            if n >= start && n <= end {
+                fresh_count += 1;
+                break;
+            }
+        }
+    }
+
+    fresh_count
+}
+
+fn count_total_fresh_ingredients(ranges: &Vec<(i64, i64)>) -> i64 {
+    ranges.iter().map(|(start, end)| end - start + 1).sum()
+}
+
 fn main() {
     let start = Instant::now();
     let lines = common::read_lines_from_input();
 
     let mut fresh_ranges: Vec<(i64, i64)> = Vec::new();
-    let mut fresh_count = 0;
     let mut separator = 0;
 
     for i in 0..lines.len() {
@@ -43,31 +66,15 @@ fn main() {
         let (start_str, end_str) = line.split_once("-").unwrap();
         let curr_start = start_str.parse::<i64>().unwrap();
         let curr_end = end_str.parse::<i64>().unwrap();
+
         fresh_ranges.push((curr_start, curr_end));
     }
 
     fresh_ranges.sort_by(|(a, _), (b, _)| a.cmp(&b));
     fresh_ranges = compact_ranges(fresh_ranges);
 
-    for i in separator + 1..lines.len() {
-        let line = &lines[i];
-        let n = line.parse::<i64>().unwrap();
-
-        for j in 0..fresh_ranges.len() {
-            let (start, end) = fresh_ranges[j];
-
-            if n >= start && n <= end {
-                fresh_count += 1;
-                break;
-            }
-        }
-    }
-
-    let mut total_fresh_count = 0;
-    for (start, end) in fresh_ranges {
-        let diff = (end - start) + 1;
-        total_fresh_count += diff;
-    }
+    let fresh_count = count_fresh_ingredients(&lines[separator + 1..], &fresh_ranges);
+    let total_fresh_count = count_total_fresh_ingredients(&fresh_ranges);
 
     let elapsed = start.elapsed();
     println!("Part 1: {}", fresh_count);
