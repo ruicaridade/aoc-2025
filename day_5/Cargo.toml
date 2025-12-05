@@ -1,0 +1,11 @@
+[package]
+name = "day_5"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+common = { path = "../common" }
+
+[[bin]]
+name = "day_5"
+path = "src/main.rs"
