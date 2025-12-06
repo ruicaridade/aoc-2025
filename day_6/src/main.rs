@@ -1,12 +1,10 @@
 use std::time::Instant;
 
 fn split_lines(lines: &Vec<String>) -> Vec<Vec<&str>> {
-    let split_lines: Vec<Vec<&str>> = lines
+    lines
         .iter()
         .map(|line| line.split_whitespace().collect::<Vec<&str>>())
-        .collect();
-
-    split_lines
+        .collect()
 }
 
 fn parse_expressions(lines: &Vec<String>) -> Vec<Vec<i64>> {
@@ -58,10 +56,9 @@ fn parse_right_to_left_expressions(lines: &Vec<String>) -> Vec<Vec<i64>> {
 }
 
 fn parse_operators(lines: &Vec<String>) -> Vec<char> {
-    let operators_line = &lines[lines.len() - 1];
-    operators_line
+    lines[lines.len() - 1]
         .split_whitespace()
-        .map(|c| c.chars().next().unwrap())
+        .map(|c| c.as_bytes()[0] as char)
         .collect()
 }
 
