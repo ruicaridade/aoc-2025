@@ -32,9 +32,12 @@ fn parse_right_to_left_expressions(lines: &Vec<String>) -> Vec<Vec<i64>> {
         let mut digits: Vec<char> = Vec::new();
 
         for y in 0..lines.len() - 1 {
-            let digit = lines[y].chars().nth(x).unwrap();
-            if digit != ' ' {
-                digits.push(digit);
+            let line_bytes = lines[y].as_bytes();
+            if x < line_bytes.len() {
+                let digit = line_bytes[x] as char;
+                if digit != ' ' {
+                    digits.push(digit);
+                }
             }
         }
 
