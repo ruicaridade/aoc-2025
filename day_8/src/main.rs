@@ -1,5 +1,8 @@
 use core::f64;
-use std::{collections::HashSet, time::Instant};
+use std::{
+    collections::{HashMap, HashSet},
+    time::Instant,
+};
 
 #[derive(Debug)]
 struct Node {
@@ -59,49 +62,57 @@ fn main() {
 
     let mut edges: Vec<HashSet<usize>> = vec![HashSet::new(); nodes.len()];
 
-    for &(i, j, _) in pairs.iter().take(1000) {
-        edges[i].insert(j);
-        edges[j].insert(i);
+    let mut circuits: Vec<Vec<usize>> = nodes.iter().enumerate().map(|(i, _)| vec![i]).collect();
+    let mut node_to_circuit: HashMap<usize, usize> = HashMap::new();
+    for (circuit_idx, circuit) in circuits.iter().enumerate() {
+        for &node in circuit {
+            node_to_circuit.insert(node, circuit_idx);
+        }
     }
 
-    let mut queue: Vec<usize> = Vec::new();
-    let mut circuits: Vec<Vec<usize>> = Vec::new();
-    let mut visited: HashSet<usize> = HashSet::new();
+    let mut part_one = 0;
+    let mut part_two = 0;
 
-    for i in 0..nodes.len() {
-        if visited.contains(&i) {
+    for (idx, &(i, j, _)) in pairs.iter().enumerate() {
+        if idx == 1000 {
+            let mut circuits_buffer = circuits.clone();
+            circuits_buffer.sort_by(|a, b| b.len().cmp(&a.len()));
+            part_one = circuits_buffer
+                .iter()
+                .take(3)
+                .fold(1, |acc, c| acc * c.len());
+        }
+
+        edges[i].insert(j);
+        edges[j].insert(i);
+
+        let circuit_i = *node_to_circuit.get(&i).unwrap();
+        let circuit_j = *node_to_circuit.get(&j).unwrap();
+
+        if circuit_i == circuit_j {
             continue;
         }
 
-        let mut circuit = Vec::new();
-        queue.push(i);
-
-        while !queue.is_empty() {
-            let current = queue.remove(0);
-            if visited.contains(&current) {
-                continue;
-            }
-
-            visited.insert(current);
-            circuit.push(current);
-
-            for edge in edges[current].iter() {
-                let j = *edge;
-                if !visited.contains(&j) {
-                    queue.push(j);
-                }
-            }
+        let populated_circuit_count = circuits.iter().filter(|circuit| circuit.len() > 0).count();
+        if populated_circuit_count == 2 {
+            part_two = nodes[i].x * nodes[j].x;
+            break;
         }
 
-        circuits.push(circuit);
-    }
+        let mut merged_circuit = circuits[circuit_i].clone();
+        merged_circuit.extend(circuits[circuit_j].clone());
 
-    circuits.sort_by(|a, b| b.len().cmp(&a.len()));
-    let circuit_size = circuits.iter().take(3).fold(1, |acc, c| acc * c.len());
+        for &node in &merged_circuit {
+            node_to_circuit.insert(node, circuit_i);
+        }
+
+        circuits[circuit_i] = merged_circuit;
+        circuits[circuit_j].clear();
+    }
 
     let elapsed = start.elapsed();
 
-    println!("Part 1: {}", circuit_size);
-    println!("Part 2: {}", 0);
+    println!("Part 1: {}", part_one);
+    println!("Part 2: {}", part_two);
     println!("Time: {:?}", elapsed);
 }
