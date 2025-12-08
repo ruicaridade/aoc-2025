@@ -34,11 +34,8 @@ fn main() {
 
     let total_beams = beams.iter().sum::<u64>();
 
-    println!("splits: {}", splits);
-    println!("total beams: {}", total_beams);
-
     let elapsed = start.elapsed();
-    println!("Part 1: {}", 0);
-    println!("Part 2: {}", 0);
+    println!("Part 1: {}", splits);
+    println!("Part 2: {}", total_beams);
     println!("Time: {:?}", elapsed);
 }
