@@ -5,26 +5,34 @@ fn main() {
     let lines = common::read_lines_from_input();
 
     let mut splits = 0;
-    let mut beams = vec![0; lines[0].len()];
+    let mut beams: Vec<u64> = vec![0; lines[0].len()];
 
-    for (y, line) in lines.iter().enumerate() {
-        for (x, c) in line.chars().enumerate() {
-            match c {
-                'S' => beams[x] += 1,
-                '^' => {
-                    if beams[x] > 0 {
-                        splits += 1;
-                        beams[x] = 0;
-                        beams[x + 1] += 1;
-                        beams[x - 1] += 1;
-                    }
+    for line in lines {
+        let chars = line.chars().collect::<Vec<char>>();
+
+        for x in 0..beams.len() {
+            let char = chars.get(x);
+
+            match char {
+                Some('S') => {
+                    beams[x] = 1;
                 }
-                _ => println!("({},{}) is {}", x, y, c),
+                Some('^') => {
+                    if beams[x] == 0 {
+                        continue;
+                    }
+
+                    splits += 1;
+                    beams[x + 1] += beams[x];
+                    beams[x - 1] += beams[x];
+                    beams[x] = 0;
+                }
+                _ => {}
             }
         }
     }
 
-    let total_beams = beams.iter().sum::<usize>();
+    let total_beams = beams.iter().sum::<u64>();
 
     println!("splits: {}", splits);
     println!("total beams: {}", total_beams);
