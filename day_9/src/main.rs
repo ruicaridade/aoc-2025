@@ -6,6 +6,12 @@ struct Point {
     y: i64,
 }
 
+impl PartialEq for Point {
+    fn eq(&self, other: &Point) -> bool {
+        (other.x == self.x) && (other.y == self.y)
+    }
+}
+
 impl Point {
     fn new(x: i64, y: i64) -> Self {
         Self { x, y }
@@ -18,9 +24,46 @@ impl Point {
     }
 }
 
-fn main() {
+struct Polygon {
+    points: Vec<Point>,
+}
+
+impl Polygon {
+    fn new(points: Vec<Point>) -> Self {
+        Self { points: points }
+    }
+
+    fn contains_point(&self, point: &Point) -> bool {
+        if self.points.is_empty() {
+            return false;
+        }
+
+        let mut inside = false;
+        let n = self.points.len();
+
+        for i in 0..self.points.len() {
+            let j = (i + 1) % n;
+
+            let e1 = &self.points[i];
+            let e2 = &self.points[j];
+
+            for k in point.
+        }
+
+        inside
+    }
+
+    fn contains_polygon(&self, polygon: &Polygon) -> bool {
+        if self.points.is_empty() {
+            return false;
+        }
+
+        false
+    }
+}
+
+fn solve_part_one(lines: &Vec<String>) {
     let start = Instant::now();
-    let lines = common::read_lines_from_input();
 
     let points: Vec<Point> = lines
         .iter()
@@ -45,33 +88,55 @@ fn main() {
         .max_by(|a, b| a.cmp(b))
         .unwrap();
 
-    let (max_x, max_y) = points
+    let elapsed = start.elapsed();
+    println!("\nPart 1: {}", largest_area);
+    println!("Time: {:?}", elapsed);
+}
+
+fn solve_part_two(lines: &Vec<String>) {
+    let start = Instant::now();
+
+    let points: Vec<Point> = lines
         .iter()
-        .fold((0, 0), |(max_x, max_y), p| (max_x.max(p.x), max_y.max(p.y)));
+        .map(|line| {
+            let parts = line
+                .split(",")
+                .map(|part| part.parse::<i64>().unwrap())
+                .collect::<Vec<i64>>();
 
-    let width = max_x + 3;
-    let height = max_y + 3;
+            Point::new(parts[0], parts[1])
+        })
+        .collect();
 
-    let mut grid: Vec<char> = vec!['.'; width as usize * height as usize];
-    for a in points.iter() {
-        for b in points.iter() {
-            for y in a.y.min(b.y)..=a.y.max(b.y) {
-                for x in a.x.min(b.x)..=a.x.max(b.x) {
-                    grid[y as usize * width as usize + x as usize] = 'X';
-                }
+    let polygon = Polygon::new(points);
+    let mut largest_area = 0;
+
+    for i in 0..polygon.points.len() {
+        for j in 0..polygon.points.len() {
+            if i == j {
+                continue;
             }
-        }
-    }
 
-    for y in 0..height {
-        for x in 0..width {
-            print!("{}", grid[y as usize * width as usize + x as usize]);
+            let p1 = &polygon.points[i];
+            let p2 = &polygon.points[j];
+
+            let c1 = Point { x: p1.x, y: p1.y };
+            let c2 = Point { x: p1.y, y: p2.x };
+            let c1 = Point { x: p2.x, y: p2.y };
+            let c4 = Point { x: p2.y, y: p1.x };
+
+            let rect = Polygon::new(vec![c1, c2, c2, c4]);
         }
-        println!();
     }
 
     let elapsed = start.elapsed();
-    println!("Part 1: {}", largest_area);
-    println!("Part 2: {}", 0);
+    println!("\nPart 2: {}", largest_area);
     println!("Time: {:?}", elapsed);
+}
+
+fn main() {
+    let lines = common::read_lines_from_input();
+
+    solve_part_one(&lines);
+    solve_part_two(&lines);
 }
