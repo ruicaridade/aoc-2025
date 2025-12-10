@@ -1,85 +1,29 @@
 use std::time::Instant;
 
-#[derive(Debug)]
-struct Point {
-    x: i64,
-    y: i64,
-}
-
-impl PartialEq for Point {
-    fn eq(&self, other: &Point) -> bool {
-        (other.x == self.x) && (other.y == self.y)
-    }
-}
-
-impl Point {
-    fn new(x: i64, y: i64) -> Self {
-        Self { x, y }
-    }
-
-    fn area_between(&self, other: &Point) -> i64 {
-        let dx = (other.x - self.x).abs() + 1;
-        let dy = (other.y - self.y).abs() + 1;
-        dx * dy
-    }
-}
-
-struct Polygon {
-    points: Vec<Point>,
-}
-
-impl Polygon {
-    fn new(points: Vec<Point>) -> Self {
-        Self { points: points }
-    }
-
-    fn contains_point(&self, point: &Point) -> bool {
-        if self.points.is_empty() {
-            return false;
-        }
-
-        let mut inside = false;
-        let n = self.points.len();
-
-        for i in 0..self.points.len() {
-            let j = (i + 1) % n;
-
-            let e1 = &self.points[i];
-            let e2 = &self.points[j];
-
-            for k in point.
-        }
-
-        inside
-    }
-
-    fn contains_polygon(&self, polygon: &Polygon) -> bool {
-        if self.points.is_empty() {
-            return false;
-        }
-
-        false
-    }
+fn area_between(a: &(i32, i32), b: &(i32, i32)) -> i64 {
+    let dx = (b.0 - a.0).abs() + 1;
+    let dy = (b.1 - a.1).abs() + 1;
+    dx as i64 * dy as i64
 }
 
 fn solve_part_one(lines: &Vec<String>) {
     let start = Instant::now();
 
-    let points: Vec<Point> = lines
+    let points: Vec<(i32, i32)> = lines
         .iter()
         .map(|line| {
             let parts = line
                 .split(",")
-                .map(|part| part.parse::<i64>().unwrap())
-                .collect::<Vec<i64>>();
+                .map(|part| part.parse::<i32>().unwrap())
+                .collect::<Vec<i32>>();
 
-            Point::new(parts[0], parts[1])
+            (parts[0], parts[1])
         })
         .collect();
 
     let areas: Vec<Vec<i64>> = points
         .iter()
-        .map(|p1| points.iter().map(|p2| p1.area_between(p2)).collect())
+        .map(|p1| points.iter().map(|p2| area_between(p1, p2)).collect())
         .collect();
 
     let largest_area = areas
@@ -93,39 +37,118 @@ fn solve_part_one(lines: &Vec<String>) {
     println!("Time: {:?}", elapsed);
 }
 
+fn matrix_insert(matrix: &mut [bool; 100000 * 100000], width: usize, point: &(i32, i32)) {
+    matrix[(point.1 as usize) * width + (point.0 as usize)] = true;
+}
+
+fn is_inside(matrix: &[bool; 100000 * 100000], width: usize, point: &(i32, i32)) -> bool {
+    matrix[(point.1 as usize) * width + (point.0 as usize)]
+}
+
 fn solve_part_two(lines: &Vec<String>) {
+    //
+    // This is the most horrendously slow, inefficient and dumb "algorithm" on planet Earth, run at your own peril.
+    //
+    // ¯\_(ツ)_/¯
+    //
+
     let start = Instant::now();
 
-    let points: Vec<Point> = lines
+    let mut points: Vec<(i32, i32)> = lines
         .iter()
         .map(|line| {
             let parts = line
                 .split(",")
-                .map(|part| part.parse::<i64>().unwrap())
-                .collect::<Vec<i64>>();
+                .map(|part| part.parse::<i32>().unwrap())
+                .collect::<Vec<i32>>();
 
-            Point::new(parts[0], parts[1])
+            (parts[0], parts[1])
         })
         .collect();
 
-    let polygon = Polygon::new(points);
-    let mut largest_area = 0;
+    points.push(points[0]);
 
-    for i in 0..polygon.points.len() {
-        for j in 0..polygon.points.len() {
-            if i == j {
-                continue;
+    let mut min_x = i32::MAX;
+    let mut max_x = 0;
+    let mut min_y = i32::MAX;
+    let mut max_y = 0;
+
+    for i in 0..points.len() {
+        let p1 = &points[i];
+
+        min_x = min_x.min(p1.0);
+        max_x = max_x.max(p1.0);
+        min_y = min_y.min(p1.1);
+        max_y = max_y.max(p1.1);
+    }
+
+    let width = (max_x - min_x + 1) as usize;
+    let height = (max_y - min_y + 1) as usize;
+    let mut matrix: [bool; 100000 * 100000] = [false; 100000 * 100000];
+
+    println!("Finding polygon edges...");
+
+    for i in 1..points.len() {
+        let p1 = &points[i - 1];
+        let p2 = &points[i];
+
+        for x in p1.0.min(p2.0)..=p1.0.max(p2.0) {
+            for y in p1.1.min(p2.1)..=p1.1.max(p2.1) {
+                matrix_insert(&mut matrix, width, &(x, y));
+            }
+        }
+    }
+
+    println!("Finding polygon inner points...");
+
+    let mut previous_point = (0, 0);
+
+    for y in min_y..=max_y {
+        let mut inside = false;
+
+        for x in min_x..=max_x {
+            let point = (x, y);
+
+            if is_inside(&matrix, width, &point) {
+                if is_inside(&matrix, width, &previous_point) {
+                    inside = true;
+                } else {
+                    inside = !inside;
+                }
             }
 
-            let p1 = &polygon.points[i];
-            let p2 = &polygon.points[j];
+            if inside {
+                matrix_insert(&mut matrix, width, &point);
+            }
 
-            let c1 = Point { x: p1.x, y: p1.y };
-            let c2 = Point { x: p1.y, y: p2.x };
-            let c1 = Point { x: p2.x, y: p2.y };
-            let c4 = Point { x: p2.y, y: p1.x };
+            previous_point = point;
+        }
+    }
 
-            let rect = Polygon::new(vec![c1, c2, c2, c4]);
+    println!("Testing all rectangles against points map...");
+
+    let mut largest_area = 0;
+
+    for i in 0..points.len() {
+        for j in 0..points.len() {
+            let p1 = &points[i];
+            let p2 = &points[j];
+
+            let mut inside = true;
+            'outer: for x in p1.0.min(p2.0)..=p1.0.max(p2.0) {
+                for y in p1.1.min(p2.1)..=p1.1.max(p2.1) {
+                    let point = (x, y);
+
+                    if !is_inside(&matrix, width, &point) {
+                        inside = false;
+                        break 'outer;
+                    }
+                }
+            }
+
+            if inside {
+                largest_area = largest_area.max(area_between(p1, p2));
+            }
         }
     }
 
