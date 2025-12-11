@@ -5,7 +5,7 @@ Advent of Code 2025 solutions written in Rust.
 ## Running Solutions
 
 ```bash
-cargo run -p day_1 path/to/input.txt
+cargo run --profile opt -p day_1 path/to/input.txt
 ```
 
 ## Adding a New Day

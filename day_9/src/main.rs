@@ -1,7 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
     time::Instant,
-    vec,
 };
 
 fn area_between(a: &(i32, i32), b: &(i32, i32)) -> i64 {
