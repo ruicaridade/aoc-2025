@@ -82,6 +82,11 @@ fn solve_part_two(lines: &Vec<String>) {
             }
         }
 
+        // This bit is important.
+        //
+        // The scanning algorithm doesn't account for horizontal edges that lead to the outside, so since
+        // we already have the tiles here anyways, we can preload the ranges with them and ignore them in
+        // the scanning algorithm.
         if p1.1 == p2.1 {
             ranges_by_row
                 .entry(p1.1)
@@ -94,7 +99,8 @@ fn solve_part_two(lines: &Vec<String>) {
     println!("X: {} to {} ({})", min_x, max_x, max_x - min_x);
     println!("Y: {} to {} ({})", min_y, max_y, max_y - min_y);
 
-    // Track all points inside the polygon by keeping track of ranges rather than individual coordinates.
+    // Track all points inside the polygon by keeping track of ranges that represent clusters of "inside" tiles,
+    // rather than storing every single point.
     for y in min_y..=max_y {
         let mut start_x = 0;
 
@@ -143,8 +149,16 @@ fn solve_part_two(lines: &Vec<String>) {
 
     let mut largest_area = 0;
 
+    // When checking if a rectangle is inside the polygon, we only need to check the points along
+    // the edges, which cuts makes the work much easier.a
+    //
+    // This is also brute force, as we're checking every point against every other point O(n^2).
     for i in 0..points.len() {
         'scan: for j in 0..points.len() {
+            if i == j {
+                continue;
+            }
+
             let p1 = &points[i];
             let p2 = &points[j];
 
@@ -154,12 +168,14 @@ fn solve_part_two(lines: &Vec<String>) {
             let y2 = p1.1.max(p2.1);
 
             for x in x1..=x2 {
+                // Check both horizontal edges at the same time.
                 if !is_inside(&(x, p1.1)) || !is_inside(&(x, p2.1)) {
                     continue 'scan;
                 }
             }
 
             for y in y1..=y2 {
+                // Check both vertical edges at the same time.
                 if !is_inside(&(p1.0, y)) || !is_inside(&(p2.0, y)) {
                     continue 'scan;
                 }
