@@ -57,7 +57,7 @@ fn solve_part_two(lines: &Vec<String>) {
 
     points.push(points[0]);
 
-    println!("Finding polygon edges...");
+    println!("Finding every tile along the polygon edges...");
 
     let mut edges: HashSet<(i32, i32)> = HashSet::new();
     let mut ranges_by_row: HashMap<i32, Vec<(i32, i32)>> = HashMap::new();
@@ -95,7 +95,7 @@ fn solve_part_two(lines: &Vec<String>) {
         }
     }
 
-    println!("Scanning for horizontal ranges...");
+    println!("Scanning for clusters of inner tiles...");
     println!("X: {} to {} ({})", min_x, max_x, max_x - min_x);
     println!("Y: {} to {} ({})", min_y, max_y, max_y - min_y);
 
@@ -103,7 +103,6 @@ fn solve_part_two(lines: &Vec<String>) {
     // rather than storing every single point.
     for y in min_y..=max_y {
         let mut start_x = 0;
-
         let mut is_inside = false;
 
         for x in (min_x - 1)..max_x {
@@ -150,7 +149,7 @@ fn solve_part_two(lines: &Vec<String>) {
     let mut largest_area = 0;
 
     // When checking if a rectangle is inside the polygon, we only need to check the points along
-    // the edges, which cuts makes the work much easier.a
+    // the edges, which makes the work much easier.
     //
     // This is also brute force, as we're checking every point against every other point O(n^2).
     for i in 0..points.len() {
