@@ -1,98 +1,66 @@
-use itertools::Itertools;
+use regex::Regex;
 use std::time::Instant;
-use std::usize;
 
 struct Machine {
     diagram: u16,
     buttons: Vec<u16>,
+    joltages: Vec<usize>,
 }
 
 impl Machine {
-    fn parse_diagram(s: &str) -> u16 {
-        s.chars()
-            .take(16)
-            .fold(0u16, |acc, ch| (acc << 1) | if ch == '#' { 1 } else { 0 })
-    }
+    fn new(line: &String) -> Self {
+        let diagram_re = Regex::new(r"\[([.#]+)\]").unwrap();
+        let buttons_re = Regex::new(r"\((\d+(?:,\d+)*)\)").unwrap();
+        let joltages_re = Regex::new(r"\{(\d+(?:,\d+)*)\}").unwrap();
 
-    fn parse_button(s: &str, diagram_length: usize) -> u16 {
-        s.split(',')
-            .map(|s| s.trim().parse::<usize>().unwrap())
-            .fold(0u16, |acc, char_index| {
-                let bit_position = diagram_length - 1 - char_index;
-                acc | (1 << bit_position)
-            })
-    }
+        let diagram_str = diagram_re
+            .captures(line)
+            .and_then(|cap| cap.get(1))
+            .map(|m| m.as_str())
+            .unwrap_or("")
+            .chars()
+            .rev()
+            .map(|c| if c == '#' { '1' } else { '0' })
+            .collect::<String>();
 
-    fn find_minimum_button_presses(&self) -> usize {
-        for i in 1..=self.buttons.len() {
-            for bslice in self.buttons.iter().combinations(i) {
-                let result = bslice.iter().fold(0u16, |acc, &&a| acc ^ a);
-                if result == self.diagram {
-                    return i;
-                }
-            }
-        }
+        let diagram = u16::from_str_radix(&diagram_str, 2).unwrap();
 
-        panic!("No valid combination found!")
-    }
-
-    fn new(value: &str) -> Self {
-        let mut indicators: u16 = 0;
-        let mut diagram_length: usize = 0;
         let mut buttons: Vec<u16> = Vec::new();
-        let mut buffer = String::new();
+        for cap in buttons_re.captures_iter(line) {
+            if let Some(numbers_str) = cap.get(1) {
+                let numbers: Vec<usize> = numbers_str
+                    .as_str()
+                    .split(',')
+                    .filter_map(|s| s.parse().ok())
+                    .collect();
 
-        let chars = value.chars().collect::<Vec<char>>();
-        let mut i = 0;
-        while i < chars.len() {
-            match &chars[i] {
-                '[' => {
-                    buffer.clear();
+                let mut button_str = "0".repeat(16).chars().collect::<Vec<char>>();
+                let length = button_str.len();
 
-                    for j in i + 1..chars.len() {
-                        let c = chars[j];
-                        if c == ']' {
-                            diagram_length = buffer.len();
-                            indicators = Self::parse_diagram(buffer.as_str());
-                            i = j;
-                            break;
-                        } else {
-                            buffer.push(c);
-                        }
-                    }
+                for number in numbers {
+                    button_str[length - number - 1] = '1';
                 }
-                '(' => {
-                    buffer.clear();
 
-                    for j in i + 1..chars.len() {
-                        let c = chars[j];
-                        if c == ')' {
-                            buttons.push(Self::parse_button(buffer.as_str(), diagram_length));
-                            i = j;
-                            break;
-                        } else {
-                            buffer.push(c);
-                        }
-                    }
-                }
-                '{' => {
-                    // Skip everything inside curly braces
-                    for j in i + 1..chars.len() {
-                        if chars[j] == '}' {
-                            i = j;
-                            break;
-                        }
-                    }
-                }
-                _ => {}
+                let button_str = button_str.iter().collect::<String>();
+                buttons.push(u16::from_str_radix(&button_str, 2).unwrap());
             }
-
-            i += 1;
         }
+
+        let joltages = joltages_re
+            .captures(line)
+            .and_then(|cap| cap.get(1))
+            .map(|m| {
+                m.as_str()
+                    .split(',')
+                    .filter_map(|s| s.parse().ok())
+                    .collect()
+            })
+            .unwrap_or_default();
 
         Self {
-            buttons: buttons,
-            diagram: indicators,
+            diagram,
+            buttons,
+            joltages,
         }
     }
 }
@@ -100,19 +68,42 @@ impl Machine {
 fn solve_part_one(lines: &Vec<String>) {
     let start = Instant::now();
 
-    let mut machines: Vec<Machine> = Vec::new();
+    let machines = lines
+        .iter()
+        .map(|line| Machine::new(line))
+        .collect::<Vec<Machine>>();
 
-    for line in lines {
-        machines.push(Machine::new(&line));
+    for machine in machines {
+        let mut shortest_length = usize::MAX;
+        let mut queue: Vec<(u16, usize)> = Vec::new();
+
+        for root_button in machine.buttons.iter() {
+            queue.push((*root_button, 1));
+
+            while !queue.is_empty() {
+                let (curr_button, curr_length) = queue.remove(0);
+
+                for button in machine.buttons.iter() {
+                    let new_button = curr_button ^ button;
+                    let new_length = curr_length + 1;
+
+                    if new_button == machine.diagram {
+                        shortest_length = new_length;
+                        break;
+                    }
+
+                    if new_length < shortest_length {
+                        queue.push((new_button, new_length));
+                    }
+                }
+            }
+        }
+
+        println!("Shortest length: {}", shortest_length);
     }
 
-    let count = machines
-        .iter()
-        .map(|m| m.find_minimum_button_presses())
-        .sum::<usize>();
-
     let elapsed = start.elapsed();
-    println!("\nPart 1: {}", count);
+    println!("\nPart 1: {}", 0);
     println!("Time: {:?}", elapsed);
 }
 
