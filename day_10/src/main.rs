@@ -1,5 +1,6 @@
+use itertools::Itertools;
 use std::time::Instant;
-use std::{fmt, usize};
+use std::usize;
 
 struct Machine {
     diagram: u16,
@@ -13,68 +14,31 @@ impl Machine {
             .fold(0u16, |acc, ch| (acc << 1) | if ch == '#' { 1 } else { 0 })
     }
 
-    fn parse_button(s: &str) -> u16 {
+    fn parse_button(s: &str, diagram_length: usize) -> u16 {
         s.split(',')
             .map(|s| s.trim().parse::<usize>().unwrap())
-            .fold(0u16, |acc, bit_index| acc | (1 << bit_index))
-    }
-
-    fn format_diagram(&self) -> String {
-        (0..16)
-            .rev()
-            .map(|i| {
-                if (self.diagram >> i) & 1 == 1 {
-                    '#'
-                } else {
-                    '.'
-                }
+            .fold(0u16, |acc, char_index| {
+                let bit_position = diagram_length - 1 - char_index;
+                acc | (1 << bit_position)
             })
-            .collect()
     }
 
-    fn format_button(button: u16) -> String {
-        let indices: Vec<usize> = (0..16)
-            .filter_map(|i| {
-                if (button >> i) & 1 == 1 {
-                    Some(i)
-                } else {
-                    None
+    fn find_minimum_button_presses(&self) -> usize {
+        for i in 1..=self.buttons.len() {
+            for bslice in self.buttons.iter().combinations(i) {
+                let result = bslice.iter().fold(0u16, |acc, &&a| acc ^ a);
+                if result == self.diagram {
+                    return i;
                 }
-            })
-            .collect();
-
-        if indices.is_empty() {
-            String::new()
-        } else if indices.len() == 1 {
-            format!("{}", indices[0])
-        } else {
-            indices
-                .iter()
-                .map(|i| i.to_string())
-                .collect::<Vec<_>>()
-                .join(",")
-        }
-    }
-
-    fn find_shortest_combination(&self) -> Vec<u16> {
-        let mut combination = Vec::new();
-
-        for i in 0..self.buttons.len() {
-            let basis = &self.buttons[i];
-            let mut counter: usize = 0;
-
-            while counter < combination.len() {
-                for j in 0..self.buttons.len() {}
-
-                counter += 1;
             }
         }
 
-        combination
+        panic!("No valid combination found!")
     }
 
     fn new(value: &str) -> Self {
         let mut indicators: u16 = 0;
+        let mut diagram_length: usize = 0;
         let mut buttons: Vec<u16> = Vec::new();
         let mut buffer = String::new();
 
@@ -88,6 +52,7 @@ impl Machine {
                     for j in i + 1..chars.len() {
                         let c = chars[j];
                         if c == ']' {
+                            diagram_length = buffer.len();
                             indicators = Self::parse_diagram(buffer.as_str());
                             i = j;
                             break;
@@ -102,11 +67,20 @@ impl Machine {
                     for j in i + 1..chars.len() {
                         let c = chars[j];
                         if c == ')' {
-                            buttons.push(Self::parse_button(buffer.as_str()));
+                            buttons.push(Self::parse_button(buffer.as_str(), diagram_length));
                             i = j;
                             break;
                         } else {
                             buffer.push(c);
+                        }
+                    }
+                }
+                '{' => {
+                    // Skip everything inside curly braces
+                    for j in i + 1..chars.len() {
+                        if chars[j] == '}' {
+                            i = j;
+                            break;
                         }
                     }
                 }
@@ -123,20 +97,6 @@ impl Machine {
     }
 }
 
-impl fmt::Display for Machine {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Format indicators: [.##.]
-        write!(f, "[{}]", self.format_diagram())?;
-
-        // Format buttons: (3) (1,3) (2) ...
-        for button in &self.buttons {
-            write!(f, " ({})", Self::format_button(*button))?;
-        }
-
-        Ok(())
-    }
-}
-
 fn solve_part_one(lines: &Vec<String>) {
     let start = Instant::now();
 
@@ -146,14 +106,13 @@ fn solve_part_one(lines: &Vec<String>) {
         machines.push(Machine::new(&line));
     }
 
-    for machine in machines {
-        println!("{}", machine);
-        println!("{} -> {:?}", machine.diagram, machine.buttons);
-        println!();
-    }
+    let count = machines
+        .iter()
+        .map(|m| m.find_minimum_button_presses())
+        .sum::<usize>();
 
     let elapsed = start.elapsed();
-    println!("\nPart 1: {}", 0);
+    println!("\nPart 1: {}", count);
     println!("Time: {:?}", elapsed);
 }
 
