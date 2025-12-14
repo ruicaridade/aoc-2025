@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::time::Instant;
+use std::{collections::VecDeque, time::Instant};
 
 struct Machine {
     diagram: u16,
@@ -73,37 +73,37 @@ fn solve_part_one(lines: &Vec<String>) {
         .map(|line| Machine::new(line))
         .collect::<Vec<Machine>>();
 
-    for machine in machines {
+    let mut total = 0;
+    let mut queue: VecDeque<(u16, usize)> = VecDeque::new();
+
+    for machine in machines.iter() {
         let mut shortest_length = usize::MAX;
-        let mut queue: Vec<(u16, usize)> = Vec::new();
 
-        for root_button in machine.buttons.iter() {
-            queue.push((*root_button, 1));
+        for button in machine.buttons.iter() {
+            queue.push_back((*button, 1));
+        }
 
-            while !queue.is_empty() {
-                let (curr_button, curr_length) = queue.remove(0);
+        while let Some((curr_button, curr_length)) = queue.pop_front() {
+            if curr_button == machine.diagram {
+                shortest_length = curr_length.min(shortest_length);
+                continue;
+            }
 
-                for button in machine.buttons.iter() {
-                    let new_button = curr_button ^ button;
-                    let new_length = curr_length + 1;
+            for next_button in machine.buttons.iter() {
+                let new_button = curr_button ^ *next_button;
+                let new_length = curr_length + 1;
 
-                    if new_button == machine.diagram {
-                        shortest_length = new_length;
-                        break;
-                    }
-
-                    if new_length < shortest_length {
-                        queue.push((new_button, new_length));
-                    }
+                if new_length < shortest_length {
+                    queue.push_back((new_button, new_length));
                 }
             }
         }
 
-        println!("Shortest length: {}", shortest_length);
+        total += shortest_length;
     }
 
     let elapsed = start.elapsed();
-    println!("\nPart 1: {}", 0);
+    println!("\nPart 1: {}", total);
     println!("Time: {:?}", elapsed);
 }
 
