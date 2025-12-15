@@ -25,4 +25,4 @@ day_$(1)_input:
 	@cargo run --release --bin day_$(1) day_$(1)/input.txt
 endef
 
-$(foreach day,$(shell seq 1 11),$(eval $(call DAY_TARGETS,$(day))))
+$(foreach day,$(shell seq 1 12),$(eval $(call DAY_TARGETS,$(day))))
